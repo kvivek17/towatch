@@ -20,47 +20,29 @@ function buffertostream(buffer) {
 
 export async function POST(request) {
 
-    const formdata = await request.formData();
-    const file = formdata.get('videofile');
-    const roomname = formdata.get('roomname');
+  const { roomname, videoUrl } = await request.json();
 
+  if (!roomname || !videoUrl) {
+    return NextResponse.json({ message: "Missing data" }, { status: 400 });
+  }
 
-    if (!file || !roomname) {
-        return NextResponse.json({ message: "File and room name are required" }, { status: 400 });
-    }
+  const user = await currentUser();
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    //upload to cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-            { resource_type: 'video', folder: 'towatch/rooms' },
-            (err, result) => (err ? reject(err) : resolve(result))
-        )
-        buffertostream(buffer).pipe(stream);
+  const client = await clientPromise;
+  const db = client.db("Towatch");
+  const collection = db.collection("rooms");
 
-    })
-    const videoUrl = uploadResult.secure_url;
+  const roomid = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
-    console.log("Video uploaded successfully:", videoUrl);
+  await collection.insertOne({
+    roomid,
+    user: user.id,
+    roomname,
+    videoUrl,
+    createdAt: new Date()
+  });
 
-    // Here you would typically save the room details to your database
-    const user = await currentUser();
-    const client = await clientPromise;
-    const db = client.db('Towatch');
-    const collection = db.collection('rooms');
-    const roomid = `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-    const create = await collection.insertOne({
-        roomid: roomid,
-        user: user.id,
-        roomname: roomname,
-        videoUrl: videoUrl,
-        createdAt: new Date(),
-
-    })
-
-    return NextResponse.json({ success: true, ID: roomid, videoUrl })
-
-
+  return NextResponse.json({ success: true, roomid });
 }
 
 
