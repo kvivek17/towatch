@@ -24,20 +24,41 @@ const AddRoom = () => {
   const [loading, setloading] = useState(false)
   const router = useRouter();
 
-  const CreateRoom = async() => {
-    setloading(true);
+const CreateRoom = async () => {
+  if (!videofile) return;
 
-    const formData = new FormData();
-    formData.append('videofile', videofile);  
-    formData.append('roomname', Roomname);
+  setloading(true);
 
-    const result = await axios.post('/api/room', formData, )
-    if(result.data.success) {
-      router.push('/watch/' + result.data.ID)
-      setloading(false);
+  try {
 
+    // 1️⃣ upload video directly to Cloudinary
+    const cloudData = new FormData();
+    cloudData.append("file", videofile);
+    cloudData.append("upload_preset", "YOUR_UPLOAD_PRESET");
+
+    const uploadRes = await axios.post(
+      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/video/upload",
+      cloudData
+    );
+
+    const videoUrl = uploadRes.data.secure_url;
+
+    // 2️⃣ send metadata to your API
+    const result = await axios.post("/api/room", {
+      roomname: Roomname,
+      videoUrl: videoUrl
+    });
+
+    if (result.data.success) {
+      router.push("/watch/" + result.data.roomid);
+    }
+
+  } catch (error) {
+    console.log(error);
   }
-}
+
+  setloading(false);
+};
 
 
   return (
