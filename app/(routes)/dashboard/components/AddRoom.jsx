@@ -34,14 +34,18 @@ const CreateRoom = async () => {
     // 1️⃣ upload video directly to Cloudinary
     const cloudData = new FormData();
     cloudData.append("file", videofile);
-    cloudData.append("upload_preset", "YOUR_UPLOAD_PRESET");
+    cloudData.append("upload_preset", "watchparty");
 
     const uploadRes = await axios.post(
-      "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/video/upload",
+      "https://api.cloudinary.com/v1_1/dxduwuyxb/video/upload",
       cloudData
     );
 
     const videoUrl = uploadRes.data.secure_url;
+
+    console.log("Video uploaded to Cloudinary:", videoUrl);
+
+
 
     // 2️⃣ send metadata to your API
     const result = await axios.post("/api/room", {
